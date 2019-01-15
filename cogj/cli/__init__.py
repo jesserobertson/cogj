@@ -5,4 +5,4 @@
     description: Top-level API imports for CLI
 """
 
-from .main import main
+from .main import cogj

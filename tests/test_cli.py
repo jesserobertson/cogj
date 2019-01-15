@@ -20,7 +20,7 @@ CLI_LOCATION = pathlib.Path(__file__).parent.parent / 'cogj'
 sys.path.insert(0, str(CLI_LOCATION))  # Push folder to front of path
 
 # This needs to go after pythonpath munging
-from cogj.cli import main as cli
+from cogj.cli import cogj as cli
 
 LOGGER = logging.getLogger('cogj')
 
@@ -69,8 +69,18 @@ class TestCLI(unittest.TestCase):
 
     def test_verbose(self):
         "Check verbosity options"
-        result = self.run_command('cogj -v DEBUG --help')
+        result = self.run_command('cogj -v DEBUG info')
         self.assertTrue('debug: COGJ up and running!' in result.output)
+
+    def test_info(self):
+        "Check info command works"
+        result = self.run_command('cogj info')
+        self.assertTrue(result.output is not None)
+
+    def test_convert(self):
+        "Check convert command works"
+        result = self.run_command('cogj convert')
+        self.assertTrue(result.output is not None)
 
 if __name__ == '__main__':
     unittest.main()

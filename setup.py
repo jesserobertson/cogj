@@ -51,7 +51,7 @@ setup(
     # Some entry points for running rosedb
     entry_points={
         'console_scripts': [
-            'cogj = cogj.cli:main',
+            'cogj = cogj.cli:cogj',
         ],
     }
 )
