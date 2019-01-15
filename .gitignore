@@ -1,0 +1,21 @@
+.ipynb_checkpoints
+.DS_Store
+*.sublime-workspace
+
+# Ignore build directories
+__pycache__
+*.eggs
+*.egg-info
+build
+dist
+
+# Ignore test files
+.cache
+.coverage
+.pytest_cache
+
+# Ignore html bokeh plots
+./jupyter/*.html
+
+# Ignore test report/coverage directories
+tests/reports

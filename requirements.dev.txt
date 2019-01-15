@@ -1,0 +1,7 @@
+# Testing requirements
+pylint
+pytest
+pytest-runner
+pytest-cov
+coverage
+ddt
