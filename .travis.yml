@@ -1,7 +1,18 @@
 language: python
 python: "3.6"
+env:
+  global:
+    - CC_TEST_REPORTER_ID="cdbebfd2cac231f27c4c142e51041db407796639d0edac93a91e17c3186ab396"
 install:
   - pip install -r requirements.txt -r requirements.dev.txt
   - pip install .
-script: python setup.py test
-after_success: coveralls
+before_script:
+  # Install code climate test reporter
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+script:
+  - python setup.py test
+after_script:
+  # Submit coverage reports to code codeclimate
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
