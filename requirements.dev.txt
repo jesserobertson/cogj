@@ -5,3 +5,4 @@ pytest-runner
 pytest-cov
 coverage
 ddt
+python-coveralls
