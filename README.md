@@ -1,6 +1,9 @@
 # Cloud-optimized GeoJSON tools
 
 Tooling for creating cloud-optimized GeoJSON files
+[![Build Status](https://travis-ci.org/jesserobertson/cogj.svg?branch=master)](https://travis-ci.org/jesserobertson/cogj)
+[![Coverage Status](https://coveralls.io/repos/github/jesserobertson/cogj/badge.svg?branch=master)](https://coveralls.io/github/jesserobertson/cogj?branch=master)
+
 
 ## Installation
 
