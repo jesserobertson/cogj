@@ -2,7 +2,7 @@
 pylint
 pytest
 pytest-runner
-pytest-cov<=2.5.0
+pytest-cov
 ddt
 coverage
 coveralls
