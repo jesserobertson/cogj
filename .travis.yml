@@ -15,4 +15,5 @@ script:
   - python setup.py test
 after_script:
   # Submit coverage reports to code codeclimate
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - ./cc-test-reporter format-coverage --input-type coverage.py tests/reports/coverage.xml
+  - ./cc-test-reporter upload-coverage
