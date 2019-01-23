@@ -1,0 +1,5 @@
+flask
+lxml
+requests
+shapely
+python-dotenv

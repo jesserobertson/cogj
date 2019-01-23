@@ -19,3 +19,5 @@ dist
 
 # Ignore test report/coverage directories
 tests/reports
+
+.vscode/

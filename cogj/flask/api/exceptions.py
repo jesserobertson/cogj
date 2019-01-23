@@ -1,0 +1,2 @@
+class GeoServerlessException(Exception):
+    pass

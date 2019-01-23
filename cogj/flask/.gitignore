@@ -1,0 +1,7 @@
+*.pyc
+api/scratch/*/*.geojson
+api/scratch/*/*.gml
+api/scratch/*/*.xsd
+.flask.env
+.geolambda.env
+logs/*.log

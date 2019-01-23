@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>GeoJSON</title>
+        <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css" />
+        <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+        <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+        <script src="https://openlayers.org/en/v5.3.0/build/ol.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+        <script src="https://mapbox.github.io/geojson-vt/geojson-vt-dev.js"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            #map {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map" class="map"></div>
+
+        <script>
+            var styles = [
+                /* We are using two different styles for the polygons:
+                 *  - The first style is for the polygons themselves.
+                 *  - The second style is to draw the vertices of the polygons.
+                 *    In a custom `geometry` function the vertices of a polygon are
+                 *    returned as `MultiPoint` geometry, which will be used to render
+                 *    the style.
+                 */
+                new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: "red",
+                        width: 3,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: "rgba(0, 0, 255, 0.1)",
+                    }),
+                }),
+            ]
+
+            var layerWFS = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    loader: function(extent) {
+                        /*$.ajax("https://demo.geo-solutions.it/geoserver/ows", {
+                            type: "GET",
+                            data: {
+                                service: "WFS",
+                                version: "1.1.0",
+                                request: "GetFeature",
+                                typename: "areeverdiPolygon",
+                                srsname: "EPSG:3857",
+                                maxfeatures: 500,
+                                //bbox: extent.join(",") + ",EPSG:3857",
+                            },
+                        }).done(function(response) {
+                            layerWFS.getSource().addFeatures(new ol.format.WFS().readFeatures(response))
+                        })*/
+
+                        $.ajax("http://localhost:5000", {
+                            type: "GET",
+                            data: {
+                                service: "WFS",
+                                version: "1.1.0",
+                                request: "GetFeature",
+                                typename: "foo",
+                                srsname: "EPSG:4326",
+                                maxfeatures: 500,
+                                //bbox: extent.join(",") + ",EPSG:3857",
+                            },
+                        }).done(function(response) {
+                            layerWFS.getSource().addFeatures(new ol.format.WFS().readFeatures(response))
+                        })
+                    },
+                    // strategy: ol.loadingstrategy.bbox,
+                    projection: "EPSG:3857",
+                    // projection: "EPSG:4326",
+                }),
+                style: styles,
+            })
+
+            var map = new ol.Map({
+                target: "map",
+                controls: [],
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM(),
+                    }),
+                    layerWFS,
+                ],
+                view: new ol.View({
+                    // center: [1243591.70562818, 5424149.57614118],
+                    // center: ol.proj.fromLonLat([-76.13839, 39.48834], "EPSG:3857"),
+                    center: [-8478332.402844921, 4791981.531033946],
+                    zoom: 14,
+                }),
+            })
+        </script>
+    </body>
+</html>
