@@ -2,3 +2,8 @@ click
 click-log
 fiona
 rtree
+flask
+lxml
+requests
+shapely
+python-dotenv

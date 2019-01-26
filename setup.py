@@ -6,22 +6,26 @@
     description: Setuptools installer script for cogj_tools.
 """
 
+import os
 from setuptools import setup, find_packages
 
-# Load requirements from requirements.txt etc
-with open('requirements.txt', 'r') as src:
-    REQUIREMENTS = src.readlines()
-with open('requirements.dev.txt', 'r') as src:
-    DEV_REQUIREMEBNTS = src.readlines()
-with open('README.md', 'r') as src:
-    README = src.read()
+def read(*paths, lines=False):
+    """
+    Build a file path from *paths and return the contents.
+
+    Parameters:
+        lines - if True, return a list of lines. Defaults to
+            False (send back raw text).
+    """
+    with open(os.path.join(*paths), 'r') as src:
+        return src.readlines() if lines else src.read()
 
 ## PACKAGE INFORMATION
 setup(
     name='cogj',
     version="0.0.1",
     description='Tooling for creating cloud-optimized GeoJSON files',
-    long_description=README,
+    long_description=read('README.md'),
     author='Jess Robertson',
     author_email='jessrobertson@icloud.com',
     classifiers=[
@@ -37,11 +41,11 @@ setup(
     ],
 
     # Dependencies
-    install_requires=REQUIREMENTS,
+    install_requires=read('requirements.txt', lines=True),
     extras_require={
-        'dev': DEV_REQUIREMEBNTS
+        'dev': read('requirements.dev.txt', lines=True)
     },
-    tests_require=DEV_REQUIREMEBNTS,
+    tests_require=read('requirements.dev.txt', lines=True),
 
     # Contents
     packages=find_packages(exclude=['test*']),
