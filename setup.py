@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-""" file:   setup.py (cogj_tools)
-    author: Jess Robertson
+""" file:   setup.py (cogj)
+    author: Jess Robertson, @jesserobertson
     date:   October 2016
 
-    description: Setuptools installer script for cogj_tools.
+    description: Setuptools installer script for cogj.
 """
 
 import os
@@ -48,7 +48,7 @@ setup(
     tests_require=read('requirements.dev.txt', lines=True),
 
     # Contents
-    packages=find_packages(exclude=['test*']),
+    packages=find_packages(exclude=['test*', 'flask']),
     include_package_data=True,
     test_suite="tests",
 

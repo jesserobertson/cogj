@@ -1,9 +1,9 @@
 click
 click-log
 fiona
+numpy
+pyproj
 rtree
-flask
-lxml
-requests
 shapely
-python-dotenv
+toolz
+voluptuous

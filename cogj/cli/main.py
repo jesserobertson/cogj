@@ -24,8 +24,8 @@ def cogj():
        _|_|_|    _|_|      _|_|_|  _|_|_|_|     | Cloud-optimized GeoJSON tools
      _|        _|    _|  _|              _|     | WFS without the WTF
      _|        _|    _|  _|  _|_|        _|     |
-     _|        _|    _|  _|    _|  _|    _|     | Developed by Jess Robertson (@jesserobertson)
-       _|_|_|    _|_|      _|_|_|    _|_|       | January 2019
+     _|        _|    _|  _|    _|  _|    _|     | Skunkworks by @jesserobertson & @keithamoss
+       _|_|_|    _|_|      _|_|_|    _|_|       | some time in January 2019
 
     For more info, try `cogj COMMAND --help`
     """
