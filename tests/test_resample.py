@@ -11,9 +11,9 @@ import os
 import pathlib
 
 import fiona
-from shapely.geometry import shape
+from shapely.geometry import shape, Point
 
-from cogj import resample
+from cogj import resample, resample_linestring_count
 
 RESOURCES = pathlib.Path(__file__).parent / 'resources'
 
@@ -53,6 +53,45 @@ class TestResample(unittest.TestCase):
         len_old = len(linestr.xy[0])
         print(len_new, len_old)
         self.assertTrue(len_old < len_new)
+
+    def test_resample_linestring_count(self):
+        "Check we can resample a linestring with a given count"
+        linestr = self.poly.boundary
+        output = resample_linestring_count(linestr, count=10)
+        self.assertTrue(output.geom_type == 'LineString')
+        self.assertEqual(len(output.xy[0]), 10)
+
+    def test_resample_linestring_step(self):
+        "Check we can resample a linestring with a given step"
+        linestr = self.poly.boundary
+        output = resample_linestring_count(linestr, step=0.1)
+        self.assertTrue(output.geom_type == 'LineString')
+        self.assertTrue(len(output.xy[0]) > len(linestr.xy[0]))
+
+    def test_resample_linestring_step_no_round(self):
+        "Check we can resample a linestring with a given step"
+        linestr = self.poly.boundary
+        output = resample_linestring_count(linestr, step=0.1, step_round=False)
+        self.assertTrue(output.geom_type == 'LineString')
+        self.assertTrue(len(output.xy[0]) > len(linestr.xy[0]))
+
+    def test_resample_linestring_count_step_and_count(self):
+        "Specifying both count and step raises an error"
+        linestr = self.poly.boundary
+        with self.assertRaises(ValueError):
+            resample_linestring_count(linestr, step=0.1, count=50)
+
+    def test_resample_linestring_long_step(self):
+        "Step length > boundary length is an error"
+        linestr = self.poly.boundary
+        with self.assertRaises(ValueError):
+            resample_linestring_count(linestr, step=1e8, step_round=False)
+
+    def test_resample_nonresample(self):
+        "Resampling a non-linestring or polygon is an error"
+        geom = Point([0, 0])
+        with self.assertRaises(ValueError):
+            resample(geom, **self.kwargs)
 
     def test_resample_polygon(self):
         "Check we can resample a polygon"

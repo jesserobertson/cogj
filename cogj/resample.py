@@ -9,8 +9,6 @@
 import numpy as np
 from shapely.geometry import LineString, Polygon
 
-__all__ = ["resample_linestring", "resample_polygon"]
-
 class LinestringSampler(object):
 
     """
@@ -104,7 +102,7 @@ def resample_linestring_count(linestring, count=None, step=None,
         samples = np.linspace(0, sampler.length, count)
     else:
         samples = np.arange(0, sampler.length, step)
-    return sampler.sample(samples)
+    return LineString(sampler.sample(samples))
 
 # Default clipping for resampling
 DEFAULT_CLIP = [4, np.inf]

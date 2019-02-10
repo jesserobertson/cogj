@@ -10,9 +10,13 @@ import json
 
 from shapely.geometry import mapping
 
-class Feature:
+from .identity import IdentityMixin
+
+class Feature(IdentityMixin):
 
     "GeoJSON Feature object"
+
+    geom_type = 'Feature'
 
     def __init__(self, geometry, properties=None):
         self.geometry = geometry
@@ -49,20 +53,23 @@ class FeatureCollection:
             are transformed to Features internally
     """
 
+    geom_type = 'FeatureCollection'
+
     def __init__(self, objects):
+        objects = list(objects)
         if all(isinstance(f, Feature) for f in objects):
             self.features = objects
         else:
             try:
                 self.features = [Feature(g) for g in objects]
             except ValueError:
-                raise ValueError('Features must be cogj.eature or shapely geometry')
+                raise ValueError('Features must be cogj.Feature or shapely geometry')
 
     @property
     def geometries(self):
         "Return iterator over feature geometries"
         for feature in self.features:
-            yield feature['geometry']
+            yield feature.geometry
 
     @property
     def __geo_interface__(self):
@@ -70,6 +77,9 @@ class FeatureCollection:
             "type": "FeatureCollection",
             "features": [f.__geo_interface__ for f in self.features]
         }
+
+    def __len__(self):
+        return len(self.features)
 
     def __iter__(self):
         return iter(self.features)

@@ -10,6 +10,7 @@ from collections import Iterable
 import voluptuous
 from toolz.curried import take, compose
 
+from .feature import Feature
 from .logging import LoggerMixin
 from .utilities import grouper
 
@@ -73,7 +74,11 @@ class FeatureFilter(LoggerMixin):
             self.logger.info('Validating records against schema')
             for item in records:
                 try:
-                    yield self._schema(item)
+                    if isinstance(item, Feature):
+                        self._schema(item.properties)  # validate
+                        yield item
+                    else:
+                        yield self._schema(item)
                 except voluptuous.MultipleInvalid:
                     self.logger.debug('Skipping invalid object %s', item)
                     continue

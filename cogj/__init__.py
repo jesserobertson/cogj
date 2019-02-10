@@ -9,5 +9,5 @@ from ._version import __version__
 
 from .feature import Feature, FeatureCollection
 from .filter import FeatureFilter
-from .resample import resample
+from .resample import resample, resample_linestring_count
 from .reproject import get_projector, reproject

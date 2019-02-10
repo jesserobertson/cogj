@@ -12,6 +12,8 @@ from shapely.geometry import Polygon, MultiPolygon, MultiLineString, \
 import pyproj
 import numpy as np
 
+from cogj import Feature, FeatureCollection
+
 GEOJSON_PROJ = 'EPSG:4326'  # Default/only projection used by GeoJSON
 
 def get_projector(from_crs, to_crs=None):
@@ -76,7 +78,9 @@ def reproject(geom, from_crs=None, to_crs=None, projector=None):
         'LinearRing': _linearring,
         'MultiLineString': _multilinestring,
         'Point': _point,
-        'MultiPoint': _multipoint
+        'MultiPoint': _multipoint,
+        'Feature': _feature,
+        'FeatureCollection': _featurecollection
     }
     try:
         return mapping[geom.geom_type](geom, projector=projector)
@@ -85,11 +89,23 @@ def reproject(geom, from_crs=None, to_crs=None, projector=None):
         raise ValueError(msg)
 
 # Reprojection helpers
+def _featurecollection(geom, projector):
+    return FeatureCollection([
+        reproject(f, projector=projector)
+        for f in geom
+    ])
+
+def _feature(geom, projector):
+    return Feature(
+        geometry=reproject(geom.geometry, projector=projector),
+        properties=geom.properties
+    )
+
 def _point(geom, projector):
     return Point(projector(*geom.xy))
 
 def _multipoint(geom, projector):
-    MultiPoint([_point(p, projector) for p in geom])
+    return MultiPoint([_point(p, projector) for p in geom])
 
 def _polygon(geom, projector):
     if geom.interiors:
