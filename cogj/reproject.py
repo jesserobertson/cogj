@@ -1,4 +1,4 @@
-""" file:    reproject.py (cogj)
+""" file:    reproject.py (spatial)
     author:  Jess Robertson, @jesserobertson
     date:    Sunday, 27 January 2019
 
@@ -6,8 +6,11 @@
 """
 
 from functools import partial
+
+from shapely.geometry import Polygon, MultiPolygon, MultiLineString, \
+    LineString, LinearRing, Point, MultiPoint
 import pyproj
-from shapely.geometry import Polygon, MultiPolygon, MultiLineString, LineString, LinearRing
+import numpy as np
 
 GEOJSON_PROJ = 'EPSG:4326'  # Default/only projection used by GeoJSON
 
@@ -31,7 +34,7 @@ def get_projector(from_crs, to_crs=None):
     # Generate pyproj objects from our CRSes
     prjs = [from_crs, to_crs or GEOJSON_PROJ]
     for idx, prj in enumerate(prjs):
-        if prj.lower().startswith('epsg'):
+        if isinstance(prj, str) and prj.lower().startswith('epsg'):
             prjs[idx] = pyproj.Proj(init=prj)
         else:
             prjs[idx] = pyproj.Proj(prj)
@@ -40,7 +43,7 @@ def get_projector(from_crs, to_crs=None):
     if prjs[0] == prjs[1]:
         _project = lambda *p: p
     else:
-        _project = lambda *p: list(partial(pyproj.transform, *prjs)(*p))
+        _project = lambda *p: np.asarray(list(partial(pyproj.transform, *prjs)(*p)))
     return _project
 
 def reproject(geom, from_crs=None, to_crs=None, projector=None):
@@ -71,7 +74,9 @@ def reproject(geom, from_crs=None, to_crs=None, projector=None):
         'LineString': _linestring,
         'MultiPolygon': _multipolygon,
         'LinearRing': _linearring,
-        'MultiLineString': _multilinestring
+        'MultiLineString': _multilinestring,
+        'Point': _point,
+        'MultiPoint': _multipoint
     }
     try:
         return mapping[geom.geom_type](geom, projector=projector)
@@ -80,6 +85,12 @@ def reproject(geom, from_crs=None, to_crs=None, projector=None):
         raise ValueError(msg)
 
 # Reprojection helpers
+def _point(geom, projector):
+    return Point(projector(*geom.xy))
+
+def _multipoint(geom, projector):
+    MultiPoint([_point(p, projector) for p in geom])
+
 def _polygon(geom, projector):
     if geom.interiors:
         reproj = Polygon(

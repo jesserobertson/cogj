@@ -11,7 +11,7 @@ import os
 import pathlib
 
 import fiona
-from shapely.geometry import asShape
+from shapely.geometry import shape
 
 from cogj import resample
 
@@ -26,43 +26,44 @@ class TestResample(unittest.TestCase):
     "Tests for resampling"
 
     def setUp(self):
-        self.test_data = os.path.join(RESOURCES, 'Palaeochannels_survey.shp')
+        self.test_data = os.path.join(RESOURCES, 'boundary.json')
         with fiona.open(self.test_data) as src:
-            self.channels = asShape(src[0]['geometry'])
+            self.poly = shape(src[0]['geometry'])
 
         # Set up default resampling args
         self.kwargs = dict(
-            resolution=0.1,
+            resolution=0.001,
             clip=[10, 3000],
             return_points=False
         )
 
     def test_have_data(self):
         "Check that our test data is available"
-        self.assertTrue(self.channels is not None)
-        self.assertTrue(len(self.channels) > 0)
+        self.assertTrue(self.poly is not None)
+        self.assertTrue(len(self.poly.boundary.xy) > 0)
 
     def test_resample_linestring(self):
         "Check we can resample a linestring"
-        linestr = self.channels[1].boundary
+        linestr = self.poly.boundary
         output = resample(linestr, **self.kwargs)
         self.assertTrue(output.geom_type == 'LineString')
 
         # Check we have actually done a subsample
         len_new = len(output.xy[0])
         len_old = len(linestr.xy[0])
-        self.assertTrue(len_old > len_new)
+        print(len_new, len_old)
+        self.assertTrue(len_old < len_new)
 
     def test_resample_polygon(self):
         "Check we can resample a polygon"
-        poly = self.channels[1]
+        poly = self.poly
         output = resample(poly, **self.kwargs)
         self.assertTrue(output.geom_type == 'Polygon')
 
         # Check we have actually done a subsample
         len_new = len(output.boundary.xy[0])
         len_old = len(poly.boundary.xy[0])
-        self.assertTrue(len_old > len_new)
+        self.assertTrue(len_old < len_new)
 
     def check_points_come_back_the_same(self):
         "Check that points from resampling polygon boundary and" \
@@ -71,11 +72,11 @@ class TestResample(unittest.TestCase):
         kwargs['return_points'] = True
 
         # Generate resamples for poly and boundary
-        poly = self.channels[1]
+        poly = self.poly
         bound = poly.boundary
         pts_poly = resample(poly, **kwargs)
         pts_bound = resample(bound, **kwargs)
-        self.assertTrue(np.allclose(pts_poly, pts_bound))
+        self.assertTrue(all_close(pts_poly, pts_bound))
 
 if __name__ == '__main__':
     unittest.main()
