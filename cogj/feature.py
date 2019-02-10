@@ -34,10 +34,14 @@ class Feature(IdentityMixin):
         "Two features are equal if their representations are equal"
         return self.__geo_interface__ == other.__geo_interface__
 
-    def json(self):
-        """ Serialize to JSON
+    def json(self, **kwargs):
         """
-        return json.dumps(mapping(self))
+        Serialize to JSON
+
+        Parameters:
+            kwargs - get passed to `jaon.dumps`. Useful for pretty-printing
+        """
+        return json.dumps(mapping(self), **kwargs)
 
 
 class FeatureCollection:
@@ -88,7 +92,11 @@ class FeatureCollection:
         "Two FeatureCollections are equal if their representations are equal"
         return self.__geo_interface__ == other.__geo_interface__
 
-    def json(self):
-        """ Serialize to JSON
+    def json(self, **kwargs):
         """
-        return json.dumps(mapping(self))
+        Serialize to JSON
+
+        Parameters:
+            kwargs - get passed to `jaon.dumps`. Useful for pretty-printing
+        """
+        return json.dumps(mapping(self), **kwargs)

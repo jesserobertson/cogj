@@ -52,6 +52,15 @@ class TestFeature(unittest.TestCase):
         self.assertIsNone(feature.properties)
         self.assertEqual(feature.geometry, geom)
 
+    def test_ident(self):
+        "Features have an autoincrementing ident"
+        features = [Feature(g) for g in GEOMS]
+        last_ident = -1
+        for feature in features:
+            print(feature.ident)
+            self.assertTrue(feature.ident > last_ident)
+            last_ident = feature.ident
+
     @ddt.data(*GEOMS)
     def test_equality(self, geom):
         "Test equality"
