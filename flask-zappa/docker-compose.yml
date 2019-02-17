@@ -1,0 +1,11 @@
+version: "3.7"
+services:
+    flask:
+        build: app/
+        entrypoint: /app/docker-entrypoint.sh
+        volumes:
+            - ./app/:/app:delegated
+        ports:
+            - "80:80"
+        env_file:
+            - secrets/flask.dev.env
