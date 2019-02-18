@@ -14,7 +14,7 @@
 			WFS, WMS, COGJ, GEO-SERVERLESS
 		</Keywords>
 		<OnlineResource>
-			{API_URL}
+			{URL_ROOT}
 		</OnlineResource>
 		<Fees>
 			NONE
@@ -28,7 +28,7 @@
 			<GetCapabilities>
 				<DCPType>
 					<HTTP>
-						<Get onlineResource="{API_URL}?COGJ_URL={COGJ_URL}&amp;REQUEST=GetCapabilities" />
+						<Get onlineResource="{URL_ROOT}?COGJ_URL={COGJ_URL}&amp;REQUEST=GetCapabilities" />
 					</HTTP>
 				</DCPType>
 			</GetCapabilities>
@@ -38,7 +38,7 @@
 				</SchemaDescriptionLanguage>
 				<DCPType>
 					<HTTP>
-						<Get onlineResource="{API_URL}?COGJ_URL={COGJ_URL}&amp;REQUEST=DescribeFeatureType" />
+						<Get onlineResource="{URL_ROOT}?COGJ_URL={COGJ_URL}&amp;REQUEST=DescribeFeatureType" />
 					</HTTP>
 				</DCPType>
 			</DescribeFeatureType>
@@ -48,7 +48,7 @@
 				</ResultFormat>
 				<DCPType>
 					<HTTP>
-						<Get onlineResource="{API_URL}?COGJ_URL={COGJ_URL}&amp;REQUEST=GetFeature" />
+						<Get onlineResource="{URL_ROOT}?COGJ_URL={COGJ_URL}&amp;REQUEST=GetFeature" />
 					</HTTP>
 				</DCPType>
 			</GetFeature>

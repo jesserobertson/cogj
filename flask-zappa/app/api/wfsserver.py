@@ -4,6 +4,7 @@ from urllib.parse import quote
 import json
 from random import getrandbits
 
+from flask import request
 from lxml import objectify
 from lxml.etree import parse, fromstring, tostring
 
@@ -13,7 +14,7 @@ from api.utils import get_env, merge_dicts
 
 class WFSServer:
     def __init__(self, service_info=None):
-        self.api_url = get_env("API_URL")
+        self.url_root = request.url_root
         self.service_info = service_info
         pass
 
@@ -46,7 +47,7 @@ class WFSServer:
             getCaps = tostring(root).decode("utf-8")
             getCaps = getCaps.format(
                 **merge_dicts(self.service_info, {
-                    "API_URL": self.api_url,
+                    "URL_ROOT": self.url_root,
                     "COGJ_URL": quote(self.service_info["COGJ_URL"])
                 }))
 
