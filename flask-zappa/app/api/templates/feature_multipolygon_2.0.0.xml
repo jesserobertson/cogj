@@ -1,0 +1,26 @@
+<foobar xmlns:test="http://test.geo-solutions.it" xmlns:gml="http://www.opengis.net/gml">
+	<featureTypeName gml:id="Cadastral.geojson.coj.1">
+		<boundedBy>
+			<Envelope srsName="urn:ogc:def:crs:EPSG::4326" srsDimension="2">
+				<lowerCorner>
+				</lowerCorner>
+				<upperCorner>
+				</upperCorner>
+			</Envelope>
+		</boundedBy>
+		<the_geom>
+			<MultiSurface srsName="urn:ogc:def:crs:EPSG::4326" srsDimension="2">
+				<surfaceMember>
+					<Polygon>
+						<exterior>
+							<LinearRing>
+								<posList>
+								</posList>
+							</LinearRing>
+						</exterior>
+					</Polygon>
+				</surfaceMember>
+			</MultiSurface>
+		</the_geom>
+	</featureTypeName>
+</foobar>

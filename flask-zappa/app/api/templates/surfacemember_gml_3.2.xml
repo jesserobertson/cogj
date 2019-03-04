@@ -1,0 +1,1 @@
+<foobar xmlns:test="http://test.geo-solutions.it" xmlns:gml="http://www.opengis.net/gml"><gml:surfaceMember><gml:Polygon><gml:exterior><gml:LinearRing><gml:posList></gml:posList></gml:LinearRing></gml:exterior></gml:Polygon></gml:surfaceMember></foobar>

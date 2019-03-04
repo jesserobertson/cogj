@@ -1,8 +1,0 @@
-<FeatureType>
-	<Name>{name}</Name>
-	<Title>{title}</Title>
-	<Abstract>{abstract}</Abstract>
-	<Keywords></Keywords>
-	<SRS>EPSG:4326</SRS>
-	<LatLongBoundingBox minx="{minx}" miny="{miny}" maxx="{maxx}" maxy="{maxy}" />
-</FeatureType>
