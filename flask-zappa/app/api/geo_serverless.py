@@ -6,6 +6,24 @@ import requests
 from api.exceptions import GeoServerlessException
 from api.utils import is_dev
 
+# https://stackoverflow.com/q/40795709
+
+
+class Point:
+
+    def __init__(self, xcoord=0, ycoord=0):
+        self.x = xcoord
+        self.y = ycoord
+
+
+class Rectangle:
+    def __init__(self, bottom_left, top_right):
+        self.bottom_left = bottom_left
+        self.top_right = top_right
+
+    def intersects(self, other):
+        return not (self.top_right.x < other.bottom_left.x or self.bottom_left.x > other.top_right.x or self.top_right.y < other.bottom_left.y or self.bottom_left.y > other.top_right.y)
+
 
 class Geo_Serverless:
     def __init__(self, COGJ_URL):
@@ -64,28 +82,19 @@ class Geo_Serverless:
         except Exception as e:
             raise GeoServerlessException(e)
 
-    # def get_bbox_from_data(self):
-    #     bboxes = []
-    #     for collection in self.get_collections():
-    #         bboxes.append(box(*collection["bbox"]))
-
-    #     return list(cascaded_union(bboxes).bounds)
-
-    # @FIXME To remove shapely dependency
     def get_collections_for_bbox(self, bbox=None):
         if self.header is None:
             self.read_header()
 
         if bbox is None:
-            if is_dev() is True:
-                return self.header["collections"][:1]
-            else:
-                return self.header["collections"]
+            return self.header["collections"]
 
-        filter_bbox = box(*[float(i) for i in bbox.split(",")])
+        filter_bbox = Rectangle(Point(bbox[0], bbox[1]), Point(bbox[2], bbox[3]))
+
         filtered_collections = []
         for collection in self.header["collections"]:
-            collection_bbox = box(*collection["bbox"])
+            collection_bbox = Rectangle(Point(collection["bbox"][0], collection["bbox"][1]), Point(collection["bbox"][2], collection["bbox"][3]))
+
             if filter_bbox.intersects(collection_bbox) is True:
                 filtered_collections.append(collection)
         return filtered_collections
@@ -99,20 +108,57 @@ class Geo_Serverless:
                 smallest = collection
         return smallest
 
-    def read_feature_collections(self, collections):
-        featureCollection = {
-            "type": "FeatureCollection",
-            "features": []
-        }
+    def read_feature_collections(self, feature_collections, start_feature=0, feature_count=1):
+        def __get_start_fc_idx(start_feature):
+            if start_feature is None:
+                return 0, 0
 
-        for collection in collections:
-            if "start" not in collection or "size" not in collection:
+            feature_running_total = 0
+            for idx, fc in enumerate(feature_collections):
+                feature_running_total += fc["features"]
+
+                if feature_running_total >= start_feature:
+                    return idx, feature_running_total - fc["features"]
+            raise GeoServerlessException("Unable to find a feature collection to start from for a start_feature of {}".format(start_feature))
+
+        # def __get_finish_fc_idx(start_idx, start_feature, feature_count):
+        #     feature_running_total = 0
+        #     for idx, fc in enumerate(feature_collections[start_idx:]):
+        #         feature_running_total += fc["features"]
+
+        #         if feature_running_total >= (start_feature + feature_count):
+        #             return idx + 1
+        #     raise GeoServerlessException("Unable to find a feature collection to start from for a start_feature of {} and feature_count of {}".format(start_feature, feature_count))
+
+        def __filter_required_feature_collections(feature_collections):
+            start_idx, feature_running_total = __get_start_fc_idx(start_feature)
+            return feature_collections[start_idx:], feature_running_total
+
+        features = []
+        fcf, feature_running_total = __filter_required_feature_collections(feature_collections)
+        for idx, fc in enumerate(fcf):
+            if "start" not in fc or "size" not in fc:
                 raise GeoServerlessException("FeatureCollection missing 'start'/'size'")
 
             response = requests.get(self.COGJ_URL, headers={
-                "Range": "bytes={start}-{end}".format(start=collection["start"], end=collection["start"] + collection["size"])
+                "Range": "bytes={start}-{end}".format(start=fc["start"], end=fc["start"] + fc["size"])
             })
             fc = response.json()
-            featureCollection["features"] += fc["features"]
 
-        return featureCollection
+            if idx == 0:
+                start_at = start_feature - feature_running_total
+                features += fc["features"][start_at:]
+            else:
+                features += fc["features"]
+
+            if len(features) >= feature_count:
+                features = features[:feature_count]
+                break
+
+        return {
+            "type": "FeatureCollection",
+            "features": features
+        }
+
+    def get_total_features(self, feature_collections):
+        return sum([fc["features"] for fc in feature_collections])

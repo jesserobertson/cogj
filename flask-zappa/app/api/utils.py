@@ -10,6 +10,10 @@ def get_request_arg_casei(find):
     return None
 
 
+def make_dict_keys_uppercase(d):
+    return {key.upper(): value for (key, value) in d.items()}
+
+
 def get_env(k, d=None):
     if k not in os.environ:
         return d

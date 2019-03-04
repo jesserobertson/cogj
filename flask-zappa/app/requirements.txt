@@ -2,3 +2,4 @@ zappa
 flask
 lxml
 requests
+beautifulsoup4

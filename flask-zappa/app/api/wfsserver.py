@@ -1,87 +1,145 @@
-import os
-import subprocess
-from urllib.parse import quote
-import json
-from random import getrandbits
-
 from flask import request
-from lxml import objectify
-from lxml.etree import parse, fromstring, tostring
+from bs4 import BeautifulSoup
 
 from api.exceptions import GeoServerlessException
-from api.utils import get_env, merge_dicts
+from api.gml import GeoJSON2GML
+from api.utils import make_dict_keys_uppercase, get_env
+
+from urllib import parse
+from copy import deepcopy
 
 
 class WFSServer:
     def __init__(self, service_info=None):
         self.url_root = request.url_root
         self.service_info = service_info
-        pass
+        self.max_features_per_page = int(get_env("MAX_FEATURES_PER_PAGE"))
 
     def make_wfs_safe_layername(self, filename):
         # https://lists.osgeo.org/pipermail/mapserver-dev/2015-July/014506.html
         # Name must start with either a letter or underscore (_) and may contain only letters, digits, underscores (_), hyphens (-), and periods (.).
         # FIXME Implement a regex to check that the name is valid and either fix it (best) or reject it (easiest) if it fails these strict checks.
-        return filename
+        return filename.lower()
 
     def get_capabilities(self, metadata, bbox):
-        with open("api/templates/getcapabilities.xml") as f:
-            root = objectify.parse(f).getroot()
+        with open("api/templates/getcapabilities_2.0.0.xml") as f:
+            soup = BeautifulSoup(f.read(), features="lxml-xml")
+            feature_type_list = soup.find("FeatureTypeList")
 
-            with open("api/templates/featuretype.xml") as f:
-                featureTypeInfo = merge_dicts(
-                    metadata,
-                    {
-                        "minx": bbox[0],
-                        "miny": bbox[1],
-                        "maxx": bbox[2],
-                        "maxy": bbox[3],
-                    },
-                    {"name": self.make_wfs_safe_layername(metadata["name"])}
-                )
+            with open("api/templates/featuretype_2.0.0.xml") as f:
+                feature_type_soup = BeautifulSoup(f.read(), features="lxml-xml")
 
-                featureType = tostring(parse(f).getroot()).decode("utf-8")
-                featureType = featureType.format(**featureTypeInfo)
-                root.FeatureTypeList.append(fromstring(featureType))
+                feature_type_soup.find("Name").string = self.make_wfs_safe_layername(metadata["name"])
+                feature_type_soup.find("Title").string = metadata["title"]
+                feature_type_soup.find("Abstract").string = metadata["abstract"]
+                feature_type_soup.find("LowerCorner").string = "{} {}".format(bbox[1], bbox[0])
+                feature_type_soup.find("UpperCorner").string = "{} {}".format(bbox[3], bbox[2])
 
-            getCaps = tostring(root).decode("utf-8")
-            getCaps = getCaps.format(
-                **merge_dicts(self.service_info, {
-                    "URL_ROOT": self.url_root,
-                    "COGJ_URL": quote(self.service_info["COGJ_URL"])
-                }))
+                feature_type_list.append(feature_type_soup)
 
-            return getCaps
+            title = soup.find("ServiceIdentification").find("Title")
+            title.string = self.service_info["SERVICE_TITLE"]
+
+            default_value = soup.find("Constraint", {"name": "CountDefault"}).find("DefaultValue")
+            default_value.string = str(self.max_features_per_page)
+
+            operations_metadata = soup.find("OperationsMetadata")
+            for op in operations_metadata.findAll("Operation"):
+                get = op.find("Get")
+                get["xlink:href"] = "{}?COGJ_URL={}".format(self.url_root, parse.quote(self.service_info["COGJ_URL"]))
+
+            return str(soup)
 
     def describe_feature_type(self, type_name, gs):
-        fc = gs.read_feature_collections([gs.find_smallest_collection()])
-        xsd_path = self.geojson_to_gml(type_name, fc).replace(".gml", ".xsd")
+        feature_collection = gs.read_feature_collections([gs.find_smallest_collection()])
+        first_feature = feature_collection["features"][0]
 
-        with open(xsd_path) as f:
-            return f.read()
+        with open("api/templates/describefeaturetype_2.0.0.xml") as f:
+            soup = BeautifulSoup(f.read(), features="lxml-xml")
+            sequence = soup.find("xsd:sequence")
 
-    def get_feature(self, type_name, feature_collections, bbox=None):
-        return self.geojson_to_gml(type_name, feature_collections, bbox)
+            with open("api/templates/element_2.0.0.xml") as f:
+                element_xml_template = f.read()
 
-    def geojson_to_gml(self, type_name, feature_collections, bbox=None):
-        scratch_dir = "./scratch/{dir}".format(dir=str(getrandbits(128)))
-        if not os.path.exists(scratch_dir):
-            os.makedirs(scratch_dir)
+                for prop, val in first_feature["properties"].items():
+                    element_xml = BeautifulSoup(element_xml_template, features="lxml-xml").find("xsd:element")
+                    element_xml["name"] = prop
+                    sequence.append(element_xml)
 
-        geojson_path = "{scratch_dir}/{type_name}.geojson".format(scratch_dir=scratch_dir, type_name=type_name)
-        gml_path = "{scratch_dir}/{type_name}.gml".format(scratch_dir=scratch_dir, type_name=type_name)
+            return str(soup)
 
-        with open(geojson_path, "w") as f:
-            json.dump(feature_collections, f)
+    def get_feature(self, type_name, geojson_feature_collection, bbox, start_feature, feature_count, total_features, result_type_hits):
+        def __write_envelope_gml(bbox, soup):
+            minx, miny = bbox[0]
+            maxx, maxy = bbox[1]
 
-        if bbox is not None:
-            command = "ogr2ogr -f GML -dsco FORMAT=GML3 -clipsrc {bbox} {gml_path} {geojson_path}".format(bbox=bbox.replace(",", " "), geojson_path=geojson_path, gml_path=gml_path)
+            lower_corner = soup.find("gml:lowerCorner")
+            lower_corner.string = "{} {}".format(miny, minx)
+
+            upper_corner = soup.find("gml:upperCorner")
+            upper_corner.string = "{} {}".format(maxy, maxx)
+
+        def __has_next_page(start_feature, features_in_response, total_features):
+            return (start_feature + features_in_response) < total_features
+
+        def __get_next_page_url(start_feature, features_in_response):
+            scheme, netloc, path, query_string, fragment = parse.urlsplit(request.url)
+            query_params = make_dict_keys_uppercase(parse.parse_qs(query_string))
+
+            query_params["STARTINDEX"] = start_feature + features_in_response
+            if "COUNT" not in query_params:
+                query_params["COUNT"] = self.max_features_per_page
+
+            new_query_string = parse.urlencode(query_params)
+            return parse.urlunsplit((scheme, netloc, path, new_query_string, fragment))
+
+        def __has_previous_page(start_feature):
+            return start_feature > 0
+
+        def __get_previous_page_url(start_feature, feature_count):
+            scheme, netloc, path, query_string, fragment = parse.urlsplit(request.url)
+            query_params = make_dict_keys_uppercase(parse.parse_qs(query_string))
+
+            query_params["STARTINDEX"] = start_feature - feature_count
+            if "COUNT" not in query_params:
+                query_params["COUNT"] = self.max_features_per_page
+
+            new_query_string = parse.urlencode(query_params, doseq=True)
+            return parse.urlunsplit((scheme, netloc, path, new_query_string, fragment))
+
+        with open("api/templates/getfeature_2.0.0.xml") as f:
+            soup = BeautifulSoup(f.read(), features="lxml-xml")
+
+        geojson2GML = GeoJSON2GML(type_name, geojson_feature_collection)
+
+        # Convert features and write to in memory GML collection
+        if result_type_hits is False:
+            featureMembers = soup.find("gml:featureMembers")
+            for xml in geojson2GML.convert():
+                featureMembers.append(xml)
+            print(">>> # of featureMembers", len(featureMembers))
+
+            # Write the bounding box containing all features into GML
+            bbox = geojson2GML.get_features_bbox()
+            __write_envelope_gml(bbox, soup)
+
+        # Support paging features and returning resultType=hits
+        featureCollection = soup.find("wfs:FeatureCollection")
+
+        if result_type_hits is False:
+            featureCollection["numberMatched"] = total_features
+            featureCollection["numberReturned"] = len(featureMembers)
+
+            if __has_next_page(start_feature, len(featureMembers), total_features) is True:
+                featureCollection["next"] = __get_next_page_url(start_feature, len(geojson_feature_collection["features"]))
+
+            if __has_previous_page(start_feature):
+                featureCollection["previous"] = __get_previous_page_url(start_feature, feature_count)
+
         else:
-            command = "ogr2ogr -f GML -dsco FORMAT=GML3 {gml_path} {geojson_path}".format(geojson_path=geojson_path, gml_path=gml_path)
+            featureCollection["numberMatched"] = total_features
+            featureCollection["numberReturned"] = 0
+            soup.find("gml:boundedBy").decompose()
+            soup.find("gml:featureMembers").decompose()
 
-        p = subprocess.Popen(command.split(" "), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, err = p.communicate()
-
-        if len(err) > 0:
-            raise GeoServerlessException("Got error '{err}' whilst reading data".format(err=err))
-        return gml_path
+        return str(soup.find("wfs:FeatureCollection"))

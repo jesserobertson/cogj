@@ -1,3 +1,4 @@
 *.pyc
 secrets/
 venv/
+tmp/
