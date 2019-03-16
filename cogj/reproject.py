@@ -12,7 +12,7 @@ from shapely.geometry import Polygon, MultiPolygon, MultiLineString, \
 import pyproj
 import numpy as np
 
-from cogj import Feature, FeatureCollection
+from .feature import Feature, FeatureCollection
 
 GEOJSON_PROJ = 'EPSG:4326'  # Default/only projection used by GeoJSON
 
@@ -45,7 +45,8 @@ def get_projector(from_crs, to_crs=None):
     if prjs[0] == prjs[1]:
         _project = lambda *p: p
     else:
-        _project = lambda *p: np.asarray(list(partial(pyproj.transform, *prjs)(*p)))
+        _project = lambda *p: \
+            np.asarray(list(partial(pyproj.transform, *prjs)(*p)))  # pylint: disable=E1120
     return _project
 
 def reproject(geom, from_crs=None, to_crs=None, projector=None):

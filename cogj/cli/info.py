@@ -12,4 +12,4 @@ def info_command():
     """
     Return information about this file
     """
-    pass
+    click.echo('Not implemented yet')

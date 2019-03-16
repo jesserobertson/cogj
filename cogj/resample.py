@@ -9,7 +9,7 @@
 import numpy as np
 from shapely.geometry import LineString, Polygon
 
-class LinestringSampler(object):
+class LinestringSampler:
 
     """
     Manages resampling of linestrings
@@ -38,6 +38,15 @@ class LinestringSampler(object):
         # Total path distance
         self.length = self.norms.sum()
         self.cumulative_norm = np.cumsum(self.norms)
+
+    def __call__(self, distances):
+        """
+        Sample distances along our boundary
+
+        Parameters:
+            distances - points given as distances along the boundary
+        """
+        return self.sample(distances)
 
     def sample(self, distances):
         """

@@ -9,4 +9,5 @@ import click
 
 @click.command("convert")
 def convert_command():
-    pass
+    "Convert a vector file format to Cloud-Optimized GeoJson (COGJ)"
+    click.echo('Not implemented yet!')

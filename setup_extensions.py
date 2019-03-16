@@ -92,7 +92,9 @@ def get_extensions():
     return extensions
 
 # Update source distribution - we always require Cython for this...
-class cython_sdist(sdist):
+class cython_sdist(sdist):  # pylint: disable=C0103
+
+    "Custom sdist command to build cython on-the-fly"
 
     def run(self):
         # Make sure the compiled Cython files in the distribution are up-to-date
