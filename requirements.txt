@@ -7,3 +7,4 @@ rtree
 shapely
 toolz
 voluptuous
+cython
