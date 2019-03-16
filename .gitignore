@@ -9,6 +9,10 @@ __pycache__
 build
 dist
 
+# Ignore cython build files
+cogj/extensions/*.c
+cogj/extensions/*.so
+
 # Ignore test files
 .cache
 .coverage
