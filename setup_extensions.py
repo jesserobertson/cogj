@@ -5,7 +5,7 @@
     description: Set up Cython extensions for CO-GJ
 """
 
-from os import path, listdir
+from pathlib import Path
 from logging import getLogger
 from multiprocessing import cpu_count
 
@@ -26,11 +26,7 @@ except ImportError:
 LOGGER = getLogger()
 
 # Where are our extensions located?
-EXTENSIONS_MODULE = ['cogj', 'extensions']
-PATH_TO_EXTENSIONS = path.join(*(
-    [path.abspath(path.dirname(__file__))]
-    + EXTENSIONS_MODULE
-))
+EXTENSIONS_MODULE = Path('cogj/extensions')
 
 def update_thread_count():
     """ Update the thread count for OpenMP extensions
@@ -40,7 +36,7 @@ def update_thread_count():
     """
     LOGGER.info('Updating thread count for cython code to %s', cpu_count())
     num_threads = cpu_count()  # We're just going for 1 thread/CPU here
-    fname = path.join(PATH_TO_EXTENSIONS, 'common.pxd')
+    fname = EXTENSIONS_MODULE / 'common.pxd'
 
     # Don't clobber other definitions
     try:
@@ -75,23 +71,23 @@ def get_extensions():
 
     # Get the extensions
     if HAVE_CYTHON:
-        files = [f for f in listdir(PATH_TO_EXTENSIONS) if f.endswith('.pyx')]
+        files = [f for f in EXTENSIONS_MODULE.iterdir() if f.suffix == '.pyx']
     else:
-        files = [f for f in listdir(PATH_TO_EXTENSIONS) if f.endswith('.c')]
+        files = [f for f in EXTENSIONS_MODULE.iterdir() if f.suffix == '.c']
 
     # Construct keyword arguments for all extensions
     kwargs = dict(
         # extra_compile_args=['-fopenmp'],
         # extra_link_args=['-fopenmp'],
-        include_dirs=[numpy.get_include(), PATH_TO_EXTENSIONS]
+        include_dirs=[numpy.get_include(), EXTENSIONS_MODULE]
     )
 
     # Construct all the extension objects and return them
     extensions = []
     for fname in files:
-        module_name = path.splitext(path.split(fname)[1])[0]
-        extension_name = '.'.join(EXTENSIONS_MODULE + [module_name])
-        source = path.join(PATH_TO_EXTENSIONS, fname)
+        module_name = fname.stem
+        extension_name = '.'.join(list(EXTENSIONS_MODULE.parts) + [module_name])
+        source = str(fname)
         extensions.append(Extension(extension_name, sources=[source], **kwargs))
     return extensions
 
@@ -102,9 +98,9 @@ class cython_sdist(sdist):
         # Make sure the compiled Cython files in the distribution are up-to-date
         from Cython.Build import cythonize
         update_thread_count()
-        cythonize([path.join(PATH_TO_EXTENSIONS, f)
-                   for f in listdir(PATH_TO_EXTENSIONS)
-                   if f.endswith('.pyx')])
+        cythonize([str(f)
+                   for f in EXTENSIONS_MODULE.iterdir()
+                   if f.suffix == '.pyx'])
         super().run()
 
 def get_cmdclass():
