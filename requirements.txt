@@ -3,7 +3,6 @@ click-log
 fiona
 numpy
 pyproj
-rtree
 shapely
 toolz
 voluptuous
